@@ -1,3 +1,4 @@
+import json
 import requests
 from datetime import date
 from tqdm import tqdm
@@ -27,7 +28,7 @@ class Uploader:
         get_photo_url = 'https://api.vk.com/method/photos.get'
         params = {'access_token': self.access_token, 'owner_id': self.user_id,
                   'v': '5.131', 'album_id': 'profile', 'extended': '1',
-                  'photo_sizes': '1'}
+                  'photo_sizes': '1', 'rev': '0'}
         response = requests.get(get_photo_url, params=params)
         for values in response.json().values():
             for largest_photo in values['items']:
@@ -39,6 +40,8 @@ class Uploader:
                        largest_photo['sizes'][-1]['url']
                 else:
                     self.page_photos[likes] = largest_photo['sizes'][-1]['url']
+        with open('photos_info.json', 'w') as file:
+            json.dump(response.json(), file)
 
     def _get_headers(self):
         return {
@@ -64,8 +67,7 @@ class Uploader:
         url_upload = self.base_host_ya + 'v1/disk/resources/upload'
         for key, value in tqdm(self.page_photos.items(), ncols=100,
                                dynamic_ncols=True, desc='Loading'):
-            params = {'path': f'{user_id}/{key}',
-                      'url': value}
+            params = {'path': f"{user_id}/{key}", 'url': value}
             response_upload = requests.post(url_upload,
                                             headers=self._get_headers(),
                                             params=params)
@@ -77,5 +79,5 @@ class Uploader:
 
 if __name__ == '__main__':
     user_id = ...
-    token = ...
-    ya = Uploader(token, user_id)
+    token_disk = ...
+    ya = Uploader(token_disk, user_id)
