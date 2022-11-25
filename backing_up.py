@@ -12,21 +12,18 @@ class Uploader:
      """
     base_host_ya = 'https://cloud-api.yandex.net/'
 
-    def __init__(self, token_disk, user_id, access_token='...'):
-        self.token = token_disk
+    def __init__(self, token_disk, access_token='...'):
+        self.token_disk = token_disk
         self.access_token = # You need to specify the token for requests to VK
-        self.user_id = user_id
         self.page_photos = {}
-        self.get_photo_profile()
-        self.create_folder()
-        self.upload()
 
-    def get_photo_profile(self):
+
+    def get_photo_profile(self, user_id):
         """
         The method gets the user's profile photo in maximum quality.
         """
         get_photo_url = 'https://api.vk.com/method/photos.get'
-        params = {'access_token': self.access_token, 'owner_id': self.user_id,
+        params = {'access_token': self.access_token, 'owner_id': user_id,
                   'v': '5.131', 'album_id': 'profile', 'extended': '1',
                   'photo_sizes': '1', 'rev': '0'}
         response = requests.get(get_photo_url, params=params)
@@ -46,10 +43,10 @@ class Uploader:
     def _get_headers(self):
         return {
             'Content-type': 'application/json',
-            'Authorization': f'OAuth {self.token}'
+            'Authorization': f'OAuth {self.token_disk}'
         }
 
-    def create_folder(self):
+    def create_folder(self, user_id):
         """
         Method creates a folder in the cloud storage.
         """
@@ -59,7 +56,7 @@ class Uploader:
                                        params=params)
         return response_folder
 
-    def upload(self):
+    def upload(self, user_id):
         """
         Method uploads photos by list to a specified folder in the cloud.
         File names are the number of likes.
@@ -78,6 +75,9 @@ class Uploader:
 
 
 if __name__ == '__main__':
-    user_id = ...
-    token_disk = ...
-    ya = Uploader(token_disk, user_id)
+    user_id = input('Введите id пользователя: ')
+    token_disk = input('Введите токен Яндекс диска: ')
+    ya = Uploader(token_disk)
+    ya.get_photo_profile(user_id)
+    ya.create_folder(user_id)
+    ya.upload(user_id)
