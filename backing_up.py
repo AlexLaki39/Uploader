@@ -59,10 +59,11 @@ class Uploader:
                                        params=params)
         return response_folder
 
-    def upload(self, user_id, num_photos=5):
+    def upload(self, user_id, num_photos):
         """
         Method uploads photos by list to a specified folder in the cloud.
         File names are the number of likes.
+        Сreates a json file with information about the photo.
         """
         url_upload = self.base_host_ya + 'v1/disk/resources/upload'
         num_photo = -1
@@ -94,8 +95,28 @@ if __name__ == '__main__':
     token_disk = input('Введите токен Яндекс диска: ')
     ya = Uploader(token_disk)
     ya.get_photo_profile(user_id)
-    num_photos = int(input(
+    num_photos = input(
         f'Введите количество фото из {len(ya.page_photos)}, которое хотите '
-        f'загрузить(по умолчанию 5): '))
+        f'загрузить(по умолчанию 5): ')
+    while type(num_photos) != int or num_photos <= 0:
+        try:
+            num_photos = int(num_photos)
+        except ValueError:
+            if num_photos == '':
+                print('number = 5')
+                num_photos = 5
+            else:
+                print('Количество загружаемых фотографий должно быть больше 0')
+                num_photos = int(input(
+                    f'Введите количество фото из {len(ya.page_photos)}, которое хотите '
+                    f'загрузить(по умолчанию 5): '))
+        else:
+            if num_photos > 0:
+                break
+            else:
+                print('Количество загружаемых фотографий должно быть больше 0')
+                num_photos = int(input(
+                    f'Введите количество фото из {len(ya.page_photos)}, которое хотите '
+                    f'загрузить(по умолчанию 5): '))
     ya.create_folder(user_id)
     ya.upload(user_id, num_photos)
