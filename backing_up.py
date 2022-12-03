@@ -2,8 +2,7 @@ import json
 import requests
 from datetime import date
 from tqdm import tqdm
-
-
+import mimetypes
 class Uploader:
     """
     access_token: token for sending vk requests;
@@ -16,6 +15,7 @@ class Uploader:
         self.token_disk = token_disk
         self.access_token = # You need to specify the token for requests to VK
         self.page_photos = {}
+        self.photo_size = {}
 
 
     def get_photo_profile(self, user_id):
@@ -37,9 +37,12 @@ class Uploader:
                        largest_photo['sizes'][-1]['url']
                 else:
                     self.page_photos[likes] = largest_photo['sizes'][-1]['url']
-        with open('photos_info.json', 'w') as file:
-            json.dump(response.json(), file)
-
+                if likes in self.photo_size.keys():
+                    self.photo_size[likes + ' ' + f_photo_date] =\
+                        largest_photo['sizes'][-1][
+                        'type']
+                else:
+                    self.photo_size[likes] = largest_photo['sizes'][-1]['type']
     def _get_headers(self):
         return {
             'Content-type': 'application/json',
@@ -56,22 +59,34 @@ class Uploader:
                                        params=params)
         return response_folder
 
-    def upload(self, user_id):
+    def upload(self, user_id, num_photos=5):
         """
         Method uploads photos by list to a specified folder in the cloud.
         File names are the number of likes.
         """
         url_upload = self.base_host_ya + 'v1/disk/resources/upload'
+        num_photo = -1
+        list_info_photo = []
         for key, value in tqdm(self.page_photos.items(), ncols=100,
                                dynamic_ncols=True, desc='Loading'):
-            params = {'path': f"{user_id}/{key}", 'url': value}
+            num_photo += 1
+            if num_photo == num_photos:
+                break
+            params = {'path': f"{user_id}/{key}", 'url': value,
+                      'disable_redirects': True}
             response_upload = requests.post(url_upload,
                                             headers=self._get_headers(),
                                             params=params)
+            dict_1 = {}
+            dict_1['file_name'] = f"{key}.{mimetypes.guess_type(params['url'], strict=True)[0]}"
+            dict_1['size'] = self.photo_size[f'{key}']
+            list_info_photo.append(dict_1)
         if response_upload.status_code == 202:
             print('Загрузка прошла успешно!')
         else:
             print(f'Ошибка: {response_upload.status_code}')
+        with open('photos_info.json', 'w') as file:
+            json.dump(list_info_photo, file)
 
 
 if __name__ == '__main__':
@@ -79,5 +94,8 @@ if __name__ == '__main__':
     token_disk = input('Введите токен Яндекс диска: ')
     ya = Uploader(token_disk)
     ya.get_photo_profile(user_id)
+    num_photos = int(input(
+        f'Введите количество фото из {len(ya.page_photos)}, которое хотите '
+        f'загрузить(по умолчанию 5): '))
     ya.create_folder(user_id)
-    ya.upload(user_id)
+    ya.upload(user_id, num_photos)
